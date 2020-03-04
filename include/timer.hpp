@@ -1,21 +1,9 @@
 #pragma once
 #include <stm32f1xx.h>
 
+// Change System Frequency
 void setSystemClock()
 {
-    // // Reset TO Default State
-    // RCC->CR &= (uint32_t)0xFEF2FF06;
-
-    // // Set HSI On
-    // RCC->CR |= RCC_CR_HSION;
-
-    // //Wait Until HSI Ready
-    // while (!(RCC->CR & RCC_CR_HSIRDY));
-
-    // // Reset SW, HPRE, PPRE1, PPRE2, ADCPRE and MCO bits
-    // RCC->CFGR &= (uint32_t)0xF8FF0000;
-
-    // Disable all interrupts and clear pending bits
     RCC->CIR = 0x009F0000;
 
     // Turn HSE ON
@@ -24,15 +12,22 @@ void setSystemClock()
     // Wait Until HSE Is Ready
     while (!(RCC->CR & RCC_CR_HSERDY))
         ;
+    
+    //set flash wait states to 2 wait states
+    FLASH->ACR &= ~(FLASH_ACR_LATENCY);
+    FLASH->ACR |= FLASH_ACR_LATENCY_2;
 
     // Set HSE Prescaler On PLL Entry
-    RCC->CFGR |= RCC_CFGR_PLLXTPRE;
+    RCC->CFGR &= ~RCC_CFGR_PLLXTPRE;
+    // RCC->CFGR |= RCC_CFGR_PLLXTPRE_HSE;
 
-    //Set PLL Source
-    RCC->CR |= RCC_CFGR_PLLSRC;
+    //Set HSE as PLL Source
+    // RCC->CFGR &= ~RCC_CFGR_PLLSRC;
+    RCC->CFGR |= RCC_CFGR_PLLSRC;
 
     // Set PLL Multiplier
-    RCC->CFGR |= RCC_CFGR_PLLMULL16;
+    RCC->CFGR &= ~(RCC_CFGR_PLLMULL);
+    RCC->CFGR |= RCC_CFGR_PLLMULL8;
 
     // Turn On PLL Clock
     RCC->CR |= RCC_CR_PLLON;
@@ -43,6 +38,10 @@ void setSystemClock()
 
     // Set System To PLL CLock
     RCC->CFGR |= RCC_CFGR_SW_PLL;
+    // RCC->CFGR = (RCC->CFGR & ~(RCC_CFGR_SW)) | RCC_CFGR_SW_HSE;
+
+    // Clear All Interrupts
+    RCC->CIR = 0x009F0000;
 }
 
 // System Clock Update

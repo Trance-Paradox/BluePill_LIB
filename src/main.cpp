@@ -46,7 +46,7 @@ int main(void)
     serialBegin();
     SystemCoreClockUpdate();
     pinMode(PORTC, 13, OUTPUT_PUSHPULL);
-    setSystemFreq();
+    setSystemClock();
     serialBegin();
     while (1)
     {

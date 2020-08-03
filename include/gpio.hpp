@@ -6,6 +6,7 @@ struct PORT
 {
 	GPIO_TypeDef *GPIO;
 	uint32_t RCC_APB2ENR;
+	uint8_t NUM;
 };
 
 // PORT DEFINATION
@@ -14,11 +15,11 @@ struct PORT
 // const struct PORT PORTC = {GPIOC, RCC_APB2ENR_IOPCEN};
 // const struct PORT PORTD = {GPIOD, RCC_APB2ENR_IOPDEN};
 // const struct PORT PORTE = {GPIOE, RCC_APB2ENR_IOPEEN};
-#define PORTA ((PORT){GPIOA, RCC_APB2ENR_IOPAEN}) /*!< GPIOB and its RCC */
-#define PORTB ((PORT){GPIOB, RCC_APB2ENR_IOPBEN}) /*!< GPIOB and its RCC */
-#define PORTC ((PORT){GPIOC, RCC_APB2ENR_IOPCEN}) /*!< GPIOC and its RCC */
-#define PORTD ((PORT){GPIOD, RCC_APB2ENR_IOPDEN}) /*!< GPIOD and its RCC */
-#define PORTE ((PORT){GPIOE, RCC_APB2ENR_IOPEEN}) /*!< GPIOE and its RCC */
+#define PORTA ((PORT){GPIOA, RCC_APB2ENR_IOPAEN, 0}) /*!< GPIOA and its RCC */
+#define PORTB ((PORT){GPIOB, RCC_APB2ENR_IOPBEN, 1}) /*!< GPIOB and its RCC */
+#define PORTC ((PORT){GPIOC, RCC_APB2ENR_IOPCEN, 2}) /*!< GPIOC and its RCC */
+#define PORTD ((PORT){GPIOD, RCC_APB2ENR_IOPDEN, 3}) /*!< GPIOD and its RCC */
+#define PORTE ((PORT){GPIOE, RCC_APB2ENR_IOPEEN, 4}) /*!< GPIOE and its RCC */
 
 // OUTPUT MODE
 enum OUTPUT_CNF
@@ -57,25 +58,31 @@ enum DIGITAL_STATE
 /*                              GPIO_Functions                                */
 /******************************************************************************/
 
-void pinMode(struct PORT, int, OUTPUT_CNF, OUTPUT_SPEED); // Initilizes PIN For OUTPUT
-void pinMode(struct PORT, int, INPUT_MODE);				  // Initilizes PIN For INPUT
-void digitalWrite(struct PORT, int, DIGITAL_STATE);		  // Changes STATE Of OUTPUT PIN
-// void toggle(GPIO_TypeDef *, int);                             // Toggle Pin
+bool pinMode(struct PORT, uint8_t, OUTPUT_CNF, OUTPUT_SPEED); // Initilizes PIN For OUTPUT
+bool pinMode(struct PORT, int, INPUT_MODE);					  // Initilizes PIN For INPUT
+void digitalWrite(struct PORT, int, DIGITAL_STATE);			  // Changes STATE Of OUTPUT PIN
+// void toggle(GPIO_TypeDef *, int);                            		// Toggle Pin
 // void set_atomic(GPIO_TypeDef *, int);                                // Set Pin To HIGH
 // void reset_atomic(GPIO_TypeDef *, int);                              // Reset Pin To LOW
 
-void pinMode(struct PORT PORTx, int PIN, OUTPUT_CNF CNF, OUTPUT_SPEED MODE = OUTPUT_2MHZ)
+bool pinMode(struct PORT PORTx, uint8_t PIN, OUTPUT_CNF CNF, OUTPUT_SPEED MODE = OUTPUT_10MHZ)
 {
+	if (PIN >> 16)
+		return 0;
 	RCC->APB2ENR |= PORTx.RCC_APB2ENR | (RCC_APB2ENR_AFIOEN * (CNF / 2));
-	((uint32_t *)PORTx.GPIO)[PIN / 8] |= (CNF << 2 | MODE) << (PIN % 8) * 4;
-	((uint32_t *)PORTx.GPIO)[PIN / 8] &= ~(((CNF << 2 | MODE) ^ 0xf) << (PIN % 8) * 4);
+	((uint32_t *)PORTx.GPIO)[PIN >> 3] |= (CNF << 2 | MODE) << (PIN % 8) * 4;
+	((uint32_t *)PORTx.GPIO)[PIN >> 3] &= ~(((CNF << 2 | MODE) ^ 0xf) << (PIN % 8) * 4);
+	return 1;
 }
 
-void pinMode(struct PORT PORTx, int PIN, INPUT_MODE CNF_MODE)
+bool pinMode(struct PORT PORTx, int PIN, INPUT_MODE CNF_MODE)
 {
+	if (PIN >> 16)
+		return 0;
 	RCC->APB2ENR |= PORTx.RCC_APB2ENR;
-	((uint32_t *)PORTx.GPIO)[PIN / 8] |= CNF_MODE << (PIN % 8) * 4;
-	((uint32_t *)PORTx.GPIO)[PIN / 8] &= ~((CNF_MODE ^ 0xf) << (PIN % 8) * 4);
+	((uint32_t *)PORTx.GPIO)[PIN >> 3] |= CNF_MODE << (PIN % 8) * 4;
+	((uint32_t *)PORTx.GPIO)[PIN >> 3] &= ~((CNF_MODE ^ 0xf) << (PIN % 8) * 4);
+	return 0;
 }
 
 void digitalWrite(struct PORT PORTx, int PIN, DIGITAL_STATE STATE)

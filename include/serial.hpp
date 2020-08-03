@@ -5,7 +5,7 @@
 #include "string.h"
 #include "stdio.h"
 #include <stdarg.h>
-#include "timer.hpp"
+#include "systemclock.hpp"
 
 void serialBegin()
 {
